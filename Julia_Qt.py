@@ -3,8 +3,7 @@
 Created on Thu Apr 16 02:21:51 2020
 
 @author: Jeremy La Porte
-Release V1.0
-Premiere version.
+Release V2.0
 Plot avec pyQt des ensembles de Julia
 """
 import numpy as np
@@ -34,8 +33,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.dynamicPlt = pg.PlotWidget(self)
         self.dynamicPlt.setBackground('#D3D3D3')
-        self.dynamicPlt.move(20,20)
-        self.dynamicPlt.resize(1450,800)
+        self.dynamicPlt.move(100,20)
+        self.dynamicPlt.resize(1200,800)
+
         
         self.horizontalSlider_1 = QSlider(Qt.Horizontal,self)
         # self.horizontalSlider_1 = QtWidgets.QSlider()
@@ -64,7 +64,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.horizontalSlider_3.setGeometry(QtCore.QRect(200, 850, 160, 22))
         self.horizontalSlider_3.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSlider_3.setMaximum(1000)
-        self.horizontalSlider_3.setMinimum(0)
+        self.horizontalSlider_3.setMinimum(1)
         self.horizontalSlider_3.setObjectName("horizontalSlider_3")
         self.horizontalSlider_3.valueChanged.connect(self.plotgraph)
         self.horizontalSlider_3.valueChanged.connect(self.rename)
@@ -82,12 +82,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.label_4 = QtGui.QLabel(str(self.horizontalSlider_4.value()/10),self)
         self.label_4.move(900,825)
         self.plotgraph()
+
+            
         # super(MainWindow, self).__init__(*args, **kwargs)
 
         # self.graphWidget = pg.PlotWidget()
         # self.setCentralWidget(self.graphWidget)
 
         # self.graphWidget.setBackground('k')
+    def getSize(self):
+        axX = self.dynamicPlt.getAxis('bottom')
+        axY = self.dynamicPlt.getAxis('left')
+        print(axX.range)
     def rename(self):
         self.label.setText(str(self.horizontalSlider_1.value()/10))
         self.label_2.setText(str(self.horizontalSlider_2.value()/10))
@@ -106,49 +112,49 @@ class MainWindow(QtWidgets.QMainWindow):
             exp = self.horizontalSlider_2.value()/10
             area = self.horizontalSlider_4.value()/10
         else:
-            p = -0.7269 + 0.1889j
-            k = 1000
-            domaine = 200
+            p = -0.15+0.6j
+            k = 400
+            domaine = 50
             exp = 2
-            area = 0.1
+            area = 0.05
             t = np.pi
             C = 1/2*np.exp(1j*t)-1/4*np.exp(2j*t)
+            plateau = False
        
         A = 0.9
         B = 1.6
         a = np.linspace(-A,A,k)
         b = np.linspace(-B,B,k)
+        a = np.arange(-A,A,1/80)
+        b = np.arange(-B,B,1/80)
         listX = []
         listY = []
-        listX_2 = []
-        listY_2 = []
+        listX_plateau = []
+        listY_plateau = []
         ColorList = []
         cmap = plt.get_cmap('plasma')
         Color = []
         for i in range(domaine):
             Tup = []
-            for j in cmap(i*17):
+            for j in cmap(i/domaine):
                 Tup.append(j*255)
             Color.append(tuple(Tup))
         for x1 in b:
             if int(x1*1000%(100)) == 0:
-                print(int(100*(x1+1.6)/3.2),'%')
+                print(int(100*(x1+B)/(B*2)),'%')
             for y1 in a:
                 z = x1+ 1j*y1
                 count = 0
                 
-                for i in range(domaine):
-                    if np.absolute(z) <= 2:
-                        z = z**exp+C
-                        count += 1
-                    else:
-                        break
+                while np.absolute(z) <= 2 and count < domaine:
+                    z = z**exp+C
+                    count += 1
 
-                if i == domaine-1:
-                    listX_2.append(x1)
-                    listY_2.append(y1)
+                if count >= domaine-1 and plateau == True:
+                    listX_plateau.append(x1)
+                    listY_plateau.append(y1)
                 else:
-                    ColorList.append(Color[count])
+                    ColorList.append(Color[count-1])
                     listX.append(x1)
                     listY.append(y1)
 
@@ -157,13 +163,22 @@ class MainWindow(QtWidgets.QMainWindow):
         print('nb points :',len(listY))
         
         brush_list = [pg.mkColor(c) for c in ColorList]
-        
-        #s1 = self.dynamicPlt.setData(x=x, y=listY, size=10, pen=pg.mkPen(None), brush='g', symbol='o', symbolBrush=pg.mkColor((0.0, 0.5666666666666667, 1.0, 1.0)), symbolPen='r')
-        self.scatter_1 = pg.ScatterPlotItem(listX, listY,pen = None,symbol='o', symbolSize=0.1 ,brush=brush_list,pxMode = True,antialias = True)
-        self.scatter_2 = pg.ScatterPlotItem(listX_2, listY_2,pen = None,symbol='o', symbolSize=0.1 , brush= 'r',pxMode = True,antialias = True) #forme
+
+        self.scatter_1 = pg.ScatterPlotItem(listX,listY,pen = None,symbol='o',Size=0.001,brush=brush_list,pxMode = True,antialias = True)
+        #self.scatter_2 = pg.ScatterPlotItem(listX_plateau,listY_plateau,pen = None,symbol='o', symbolSize=0.01 , brush= 'r',pxMode = True,antialias = True) #forme
         self.dynamicPlt.addItem(self.scatter_1)
-        self.dynamicPlt.addItem(self.scatter_2)
+        #self.dynamicPlt.addItem(self.scatter_2)
+        # axX = self.dynamicPlt.getAxis('bottom')
+        # axY = self.dynamicPlt.getAxis('left')
+        # self.dynamicPlt.setXRange(-1,1)
+        # self.dynamicPlt.setYRange(-1,1)
+
+
+        # print(axX.range) # <------- get range of x axis
+        # print(axY.range) # <------- get range of x axis
         print("--- %s seconds ---" % (time.time() - start_time))
+        # while True:
+        #     self.getSize()
 
 
 
